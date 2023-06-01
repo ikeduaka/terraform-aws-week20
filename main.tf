@@ -1,21 +1,12 @@
-# EC2 instance type and region
-
-provider "aws" {
-  region = "us-east-1"
-}
-
-# EC2 key-pair
-
-resource "aws_key_pair" "jenkins-new" {
-  key_name   = "jenkins-new"
-  public_key = file("~/.ssh/jenkins-new.pub")
-}
 
 # Launching ec2 with jenkins bootstrapped at the user-data
+# region from variables
+# instance-type from variables
 
 resource "aws_instance" "jenkins-ec2" {
-  ami           = "ami-053b0d53c279acc90"
-  instance_type = "t2.micro"
+  ami           = "${lookup(var.ami_id, var.region)}"
+  instance_type = "${var.instance_type}"
+
   key_name      = "jenkins-new"
 
   user_data = <<-EOF
@@ -41,7 +32,9 @@ resource "aws_instance" "jenkins-ec2" {
   EOF
 
   tags = {
-    Name = "jenkins-ec2"
+
+    Name = "jenkins-ec2-${random_id.random.hex}"
+
   }
 }
 
@@ -82,13 +75,24 @@ resource "aws_default_vpc" "default" {
   }
 }
 
-# S3 bucket for jenkins artifacts
 
-resource "aws_s3_bucket" "jenkin-101231101" {
-  bucket = "jenkin-101231101"
+resource "aws_s3_bucket" "s3-jenkins" {
+  bucket = "s3-jenkins-${random_id.random.hex}"
+
   tags = {
     Name = "my_new_jenkins_S3_Bucket"
 
 }
 
 }
+
+resource "random_id" "random" {
+  byte_length = 16
+}
+# EC2 key-pair
+
+resource "aws_key_pair" "jenkins-new" {
+  key_name   = "jenkins-new"
+  public_key = file("~/.ssh/jenkins-new.pub")
+}
+
